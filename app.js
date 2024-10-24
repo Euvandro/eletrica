@@ -6,7 +6,9 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
+app.use(express.json({ strict: true }))
+
 
 app.get('/registros', (req, res) => {
     db.execute('SELECT * FROM registros', (err, results) => {
@@ -20,18 +22,25 @@ app.get('/registros', (req, res) => {
 });
 
 app.post('/registros', (req, res) => {
-    const { valor, tipo } = req.body;
+    const { voltage, current, power, energy, frequency, pf,  } = req.body;
     const date = new Date();
     const data = date.toISOString().split('T')[0]
     const hora = date.toLocaleTimeString();
 
-    console.log(valor, tipo, data, hora)
+    console.log(req.body);
 
-    db.query("INSERT INTO `registros` (valor, tipo, data_registro, hora_registro) VALUES (?, ?, ?, ?)", [valor, tipo, data, hora], function(err, result){
-        if(err) throw err;
+    console.log(voltage, current, power, energy, frequency, pf, data, hora);
 
-        res.sendStatus(200);
-    });
+    try {
+        db.query("INSERT INTO `registros` (tensao, corrente, potencia, energia, frequencia, pf, data_registro, hora_registro) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [voltage, current, power, energy, frequency, pf, data, hora], function(err, result){
+            if(err) console.log(err)
+    
+            res.sendStatus(200);
+        });
+    } catch (error) {
+        console.log("Erro: ", error)
+    }
+    
 });
 
 // Start the server
