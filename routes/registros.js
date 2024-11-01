@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db').db;
-const { zonedTimeToUtc } = require('date-fns-tz');
+const { fromZonedTime } = require('date-fns-tz');
 
 router.get('/registros', (req, res) => {
     const page = parseInt(req.query.page) || 1; // Página atual, padrão é 1
@@ -96,7 +96,7 @@ router.post('/registros', (req, res) => {
     const date = new Date();
     // const data = date.toLocaleDateString("pt-BR");
 
-    const data = zonedTimeToUtc(date, 'America/Sao_Paulo').toISOString().split('T')[0];
+    const data = fromZonedTime(date, 'America/Sao_Paulo').toISOString().split('T')[0];
     const hora = date.toLocaleTimeString("pt-BR");
 
 
