@@ -8,14 +8,69 @@ router.get('/registros', (req, res) => {
     const limit = parseInt(req.query.limit) || 10; // Limite de registros por página, padrão é 10
     const offset = (page - 1) * limit; // Calcula o deslocamento para a consulta SQL
 
-    db.execute('SELECT * FROM registros ORDER BY id DESC LIMIT ? OFFSET ?', [limit, offset], (err, results) => {
+    // Parâmetros opcionais para intervalos de data e hora
+    const dataInicio = req.query.data_inicio;
+    const dataFim = req.query.data_fim;
+    const horaInicio = req.query.hora_inicio;
+    const horaFim = req.query.hora_fim;
+
+    // Construindo a consulta SQL base e parâmetros
+    let query = 'SELECT * FROM registros';
+    let countQuery = 'SELECT COUNT(*) AS total FROM registros';
+    const queryParams = [];
+    const countParams = [];
+
+    // Adicionando condições para intervalos de data e hora
+    const conditions = [];
+    
+    if (dataInicio && dataFim) {
+        conditions.push('data_registro BETWEEN ? AND ?');
+        queryParams.push(dataInicio, dataFim);
+        countParams.push(dataInicio, dataFim);
+    } else if (dataInicio) {
+        conditions.push('data_registro >= ?');
+        queryParams.push(dataInicio);
+        countParams.push(dataInicio);
+    } else if (dataFim) {
+        conditions.push('data_registro <= ?');
+        queryParams.push(dataFim);
+        countParams.push(dataFim);
+    }
+
+    if (horaInicio && horaFim) {
+        conditions.push('hora_registro BETWEEN ? AND ?');
+        queryParams.push(horaInicio, horaFim);
+        countParams.push(horaInicio, horaFim);
+    } else if (horaInicio) {
+        conditions.push('hora_registro >= ?');
+        queryParams.push(horaInicio);
+        countParams.push(horaInicio);
+    } else if (horaFim) {
+        conditions.push('hora_registro <= ?');
+        queryParams.push(horaFim);
+        countParams.push(horaFim);
+    }
+
+    // Adiciona as condições WHERE na consulta se existirem filtros
+    if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+        countQuery += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    // Adiciona limites e deslocamento para paginação
+    query += ' LIMIT ? OFFSET ?';
+    queryParams.push(limit, offset);
+
+    // Executa a consulta principal com os filtros e paginação
+    db.execute(query, queryParams, (err, results) => {
         if (err) {
             console.error('Error executing query: ' + err.stack);
             res.status(500).send('Error fetching records');
             return;
         }
         
-        db.execute('SELECT COUNT(*) AS total FROM registros', (err, countResult) => {
+        // Executa a consulta de contagem com os mesmos filtros, sem paginação
+        db.execute(countQuery, countParams, (err, countResult) => {
             if (err) {
                 console.error('Error executing count query: ' + err.stack);
                 res.status(500).send('Error fetching record count');
@@ -39,8 +94,8 @@ router.get('/registros', (req, res) => {
 router.post('/registros', (req, res) => {
     const { voltage, current, power, energy, frequency, pf,  } = req.body;
     const date = new Date();
-    const data = date.toISOString().split('T')[0]
-    const hora = date.toLocaleTimeString();
+    const data = date.toLocaleDateString("pt-BR");
+    const hora = date.toLocaleTimeString("pt-BR");
 
     console.log(req.body);
 

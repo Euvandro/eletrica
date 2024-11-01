@@ -11,7 +11,7 @@ app.use(express.json({ strict: true }))
 
 
 const registrosRoutes = require('./routes/registros');
-app.use('/registros', registrosRoutes);
+app.use('/', registrosRoutes);
 
 // Start the server
 app.listen(PORT, () => {
