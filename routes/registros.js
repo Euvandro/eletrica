@@ -15,7 +15,7 @@ router.get('/registros', (req, res) => {
     const horaFim = req.query.hora_fim;
 
     // Construindo a consulta SQL base e parâmetros
-    let query = 'SELECT * FROM registros';
+    let query = 'SELECT * FROM registros ORDER BY id DESC';
     let countQuery = 'SELECT COUNT(*) AS total FROM registros';
     const queryParams = [];
     const countParams = [];
@@ -91,12 +91,48 @@ router.get('/registros', (req, res) => {
     });
 });
 
+router.get('/registros/estatisticas', (req, res) => {
+    const query = `
+        SELECT 
+            MAX(tensao) AS maior_tensao,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND tensao = MAX(r.tensao) LIMIT 1) AS horario_maior_tensao,
+            
+            MIN(tensao) AS menor_tensao,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND tensao = MIN(r.tensao) LIMIT 1) AS horario_menor_tensao,
+
+            MAX(corrente) AS maior_corrente,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND corrente = MAX(r.corrente) LIMIT 1) AS horario_maior_corrente,
+            
+            MIN(corrente) AS menor_corrente,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND corrente = MIN(r.corrente) LIMIT 1) AS horario_menor_corrente,
+            
+            MAX(potencia) AS maior_potencia,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND potencia = MAX(r.potencia) LIMIT 1) AS horario_maior_potencia,
+            
+            MIN(potencia) AS menor_potencia,
+            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND potencia = MIN(r.potencia) LIMIT 1) AS horario_menor_potencia
+
+        FROM registros r
+        WHERE data_registro = CURDATE();
+    `;
+
+    db.execute(query, (err, results) => {
+        if (err) {
+            console.error('Erro ao executar a consulta: ' + err.stack);
+            res.status(500).send('Erro ao buscar estatísticas');
+            return;
+        }
+
+        res.json(results[0]); // Retorna o primeiro (e único) resultado da consulta
+    });
+});
+
 router.post('/registros', (req, res) => {
     const { voltage, current, power, energy, frequency, pf,  } = req.body;
     const date = new Date();
     // const data = date.toLocaleDateString("pt-BR");
 
-    const data = fromZonedTime(date, 'America/Sao_Paulo').toISOString().split('T')[0];
+    const data = fromZonedTime(date, 'America/Sao_Paulo');
     const hora = date.toLocaleTimeString("pt-BR");
 
 
