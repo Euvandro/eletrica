@@ -92,31 +92,48 @@ router.get('/registros', (req, res) => {
 });
 
 router.get('/registros/estatisticas', (req, res) => {
+
+    const data = req.query.data;
+
+    if (!data) return res.status(500).send('Data não inserida na requisição');
+
     const query = `
-        SELECT 
-            MAX(tensao) AS maior_tensao,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND tensao = MAX(r.tensao) LIMIT 1) AS horario_maior_tensao,
-            
-            MIN(tensao) AS menor_tensao,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND tensao = MIN(r.tensao) LIMIT 1) AS horario_menor_tensao,
+    SELECT 
+        MAX(tensao) AS maior_tensao,
+        MIN(tensao) AS menor_tensao,
+        MAX(corrente) AS maior_corrente,
+        MIN(corrente) AS menor_corrente,
+        MAX(potencia) AS maior_potencia,
+        MIN(potencia) AS menor_potencia,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND tensao = (SELECT MAX(tensao) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_maior_tensao,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND tensao = (SELECT MIN(tensao) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_menor_tensao,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND corrente = (SELECT MAX(corrente) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_maior_corrente,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND corrente = (SELECT MIN(corrente) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_menor_corrente,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND potencia = (SELECT MAX(potencia) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_maior_potencia,
+        
+        (SELECT hora_registro 
+         FROM registros 
+         WHERE data_registro = ? AND potencia = (SELECT MIN(potencia) FROM registros WHERE data_registro = ?) LIMIT 1) AS horario_menor_potencia
+    FROM registros
+    WHERE data_registro = ?;
+`;
 
-            MAX(corrente) AS maior_corrente,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND corrente = MAX(r.corrente) LIMIT 1) AS horario_maior_corrente,
-            
-            MIN(corrente) AS menor_corrente,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND corrente = MIN(r.corrente) LIMIT 1) AS horario_menor_corrente,
-            
-            MAX(potencia) AS maior_potencia,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND potencia = MAX(r.potencia) LIMIT 1) AS horario_maior_potencia,
-            
-            MIN(potencia) AS menor_potencia,
-            (SELECT hora_registro FROM registros WHERE data_registro = CURDATE() AND potencia = MIN(r.potencia) LIMIT 1) AS horario_menor_potencia
-
-        FROM registros r
-        WHERE data_registro = CURDATE();
-    `;
-
-    db.execute(query, (err, results) => {
+    db.execute(query,[data, data, data, data, data, data, data, data, data, data, data, data, data] ,(err, results) => {
         if (err) {
             console.error('Erro ao executar a consulta: ' + err.stack);
             res.status(500).send('Erro ao buscar estatísticas');
