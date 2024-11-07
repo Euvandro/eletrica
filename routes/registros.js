@@ -15,7 +15,7 @@ router.get('/registros', (req, res) => {
     const horaFim = req.query.hora_fim;
 
     // Construindo a consulta SQL base e parâmetros
-    let query = 'SELECT * FROM registros ORDER BY id DESC';
+    let query = 'SELECT * FROM registros'; //ORDER BY id DESC';
     let countQuery = 'SELECT COUNT(*) AS total FROM registros';
     const queryParams = [];
     const countParams = [];
@@ -58,9 +58,10 @@ router.get('/registros', (req, res) => {
     }
 
     // Adiciona limites e deslocamento para paginação
-    query += ' LIMIT ? OFFSET ?';
+    query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
     queryParams.push(limit, offset);
 
+    console.log(query);
     // Executa a consulta principal com os filtros e paginação
     db.execute(query, queryParams, (err, results) => {
         if (err) {
